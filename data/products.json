@@ -1,1 +1,15 @@
-[{"title":"A Book","imageUrl":"https://www.publicdomainpictures.net/pictures/10000/velka/1-1210009435EGmE.jpg","description":"This is an awesome book!","price":"19"}]
+[{
+        "id": "3245",
+        "title": "A Book",
+        "imageUrl": "https://www.publicdomainpictures.net/pictures/10000/velka/1-1210009435EGmE.jpg",
+        "description": "This is an awesome book!",
+        "price": "19"
+    },
+    {
+        "title": "Another Book",
+        "imageUrl": "https://www.wikihow.com/images/thumb/8/8b/Draw-a-Book-Step-13-Version-2.jpg/aid1411194-v4-1200px-Draw-a-Book-Step-13-Version-2.jpg",
+        "description": "Another cool book",
+        "price": "65",
+        "id": "0.8625738287522522"
+    }
+]

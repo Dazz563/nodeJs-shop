@@ -1,7 +1,7 @@
 const Product = require('../models/product');
 
 exports.getProducts = (req, res, next) => {
-    Product.findAll()
+    Product.fetchAll()
         .then(products => {
             res.render('shop/product-list', {
                 prods: products,
@@ -9,12 +9,23 @@ exports.getProducts = (req, res, next) => {
                 path: '/products'
             });
         })
-        .catch(err => console.log(err));
+        .catch(err => {
+            console.log(err);
+        });
 };
 
 exports.getProduct = (req, res, next) => {
     const prodId = req.params.productId;
-    Product.findByPk(prodId)
+    // Product.findAll({ where: { id: prodId } })
+    //   .then(products => {
+    //     res.render('shop/product-detail', {
+    //       product: products[0],
+    //       pageTitle: products[0].title,
+    //       path: '/products'
+    //     });
+    //   })
+    //   .catch(err => console.log(err));
+    Product.findById(prodId)
         .then(product => {
             res.render('shop/product-detail', {
                 product: product,
@@ -26,7 +37,7 @@ exports.getProduct = (req, res, next) => {
 };
 
 exports.getIndex = (req, res, next) => {
-    Product.findAll()
+    Product.fetchAll()
         .then(products => {
             res.render('shop/index', {
                 prods: products,
@@ -34,15 +45,17 @@ exports.getIndex = (req, res, next) => {
                 path: '/'
             });
         })
-        .catch(err => console.log(err));
+        .catch(err => {
+            console.log(err);
+        });
 };
 
 exports.getCart = (req, res, next) => {
-    // Below getCart() is a sequelize magic method 
-    req.user.getCart()
+    req.user
+        .getCart()
         .then(cart => {
-            // Below getProducts() is a sequelize magic method 
-            return cart.getProducts()
+            return cart
+                .getProducts()
                 .then(products => {
                     res.render('shop/cart', {
                         path: '/cart',
@@ -72,11 +85,11 @@ exports.postCart = (req, res, next) => {
             }
 
             if (product) {
-                const oldQuantity = product.cart_item.quantity;
+                const oldQuantity = product.cartItem.quantity;
                 newQuantity = oldQuantity + 1;
                 return product;
             }
-            return Product.findByPk(prodId);
+            return Product.findById(prodId);
         })
         .then(product => {
             return fetchedCart.addProduct(product, {
@@ -91,14 +104,14 @@ exports.postCart = (req, res, next) => {
 
 exports.postCartDeleteProduct = (req, res, next) => {
     const prodId = req.body.productId;
-    req.user.getCart()
+    req.user
+        .getCart()
         .then(cart => {
             return cart.getProducts({ where: { id: prodId } });
         })
         .then(products => {
             const product = products[0];
-            // Delete item in intermediate table
-            return product.cart_item.destroy();
+            return product.cartItem.destroy();
         })
         .then(result => {
             res.redirect('/cart');
@@ -108,18 +121,22 @@ exports.postCartDeleteProduct = (req, res, next) => {
 
 exports.postOrder = (req, res, next) => {
     let fetchedCart;
-    req.user.getCart()
+    req.user
+        .getCart()
         .then(cart => {
             fetchedCart = cart;
             return cart.getProducts();
         })
         .then(products => {
-            return req.user.createOrder()
+            return req.user
+                .createOrder()
                 .then(order => {
-                    return order.addProducts(products.map(product => {
-                        product.order_item = { quantity: product.cart_item.quantity }
-                        return product;
-                    }));
+                    return order.addProducts(
+                        products.map(product => {
+                            product.orderItem = { quantity: product.cartItem.quantity };
+                            return product;
+                        })
+                    );
                 })
                 .catch(err => console.log(err));
         })
@@ -133,15 +150,14 @@ exports.postOrder = (req, res, next) => {
 };
 
 exports.getOrders = (req, res, next) => {
-    // Below getOrders() is a sequelize magic method 
-    req.user.getOrders({ include: ['products'] })
+    req.user
+        .getOrders({ include: ['products'] })
         .then(orders => {
             res.render('shop/orders', {
                 path: '/orders',
                 pageTitle: 'Your Orders',
-                orders: orders,
+                orders: orders
             });
-
         })
         .catch(err => console.log(err));
 };

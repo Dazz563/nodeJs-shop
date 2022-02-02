@@ -1,5 +1,4 @@
 const Product = require('../models/product');
-const Cart = require('../models/cart');
 
 exports.getProducts = (req, res, next) => {
     Product.findAll()
@@ -39,10 +38,10 @@ exports.getIndex = (req, res, next) => {
 };
 
 exports.getCart = (req, res, next) => {
-    // Below getCart() is a sequelize magic method created on the fly with the relation in app.js
+    // Below getCart() is a sequelize magic method 
     req.user.getCart()
         .then(cart => {
-            // Below getProducts() is a sequelize magic method created on the fly with the relation in app.js
+            // Below getProducts() is a sequelize magic method 
             return cart.getProducts()
                 .then(products => {
                     res.render('shop/cart', {
@@ -107,16 +106,42 @@ exports.postCartDeleteProduct = (req, res, next) => {
         .catch(err => console.log(err));
 };
 
-exports.getOrders = (req, res, next) => {
-    res.render('shop/orders', {
-        path: '/orders',
-        pageTitle: 'Your Orders'
-    });
+exports.postOrder = (req, res, next) => {
+    let fetchedCart;
+    req.user.getCart()
+        .then(cart => {
+            fetchedCart = cart;
+            return cart.getProducts();
+        })
+        .then(products => {
+            return req.user.createOrder()
+                .then(order => {
+                    return order.addProducts(products.map(product => {
+                        product.order_item = { quantity: product.cart_item.quantity }
+                        return product;
+                    }));
+                })
+                .catch(err => console.log(err));
+        })
+        .then(result => {
+            return fetchedCart.setProducts(null);
+        })
+        .then(result => {
+            res.redirect('/orders');
+        })
+        .catch(err => console.log(err));
 };
 
-exports.getCheckout = (req, res, next) => {
-    res.render('shop/checkout', {
-        path: '/checkout',
-        pageTitle: 'Checkout'
-    });
+exports.getOrders = (req, res, next) => {
+    // Below getOrders() is a sequelize magic method 
+    req.user.getOrders({ include: ['products'] })
+        .then(orders => {
+            res.render('shop/orders', {
+                path: '/orders',
+                pageTitle: 'Your Orders',
+                orders: orders,
+            });
+
+        })
+        .catch(err => console.log(err));
 };
